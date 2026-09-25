@@ -3,6 +3,16 @@
 The physics contracts every wrapper must **state**, **enforce**, and **test**.
 An unstated convention is a defect: the next caller will assume the other one.
 
+The conventions themselves are defined for human readers in the sparse-ir
+documentation, [Notation and conventions](https://spm-lab.github.io/sparse-ir-doc/src/notation.html):
+- symbols and signs;
+- the Fourier transform, the imaginary-time domain and its endpoints;
+- the reduced Matsubara frequency;
+- the IR and DLR definitions.
+
+This file lists what wrappers must state, enforce and test about them. Where
+the two disagree, the document is authoritative and this file must be fixed.
+
 ## Complex Versus Real Expansion Coefficients
 
 **Failure it prevents:** the imaginary part of a physically complex quantity
@@ -43,7 +53,7 @@ return coeffs.real
 **Failure it prevents:** half the Matsubara axis dropped, and the imaginary part
 zeroed, under a keyword whose meaning was never written down.
 
-- `positive_only = true` asserts the symmetry `g(-i omega) = conj(g(i omega))`
+- `positive_only = true` asserts the symmetry `g(-i nu) = conj(g(i nu))`
   — i.e. that the underlying quantity is real in imaginary time. It is a
   statement about the caller's data, not a display option.
 - Its meaning must be stated in the docstring of every function that accepts
@@ -77,9 +87,11 @@ the other, producing a rank-deficient or wrong basis with no error.
 - Statistics is part of the identity of a basis, a sampling object, an
   augmentation, and a set of Matsubara points. Never infer it from context and
   never default it.
-- Matsubara index parity follows the statistics: odd for fermions
-  (`omega_n = (2n+1) pi / beta`), even for bosons (`omega_n = 2n pi / beta`).
-  Validate parity at the boundary — see [`ffi-boundary.md`](ffi-boundary.md).
+- The APIs take the **reduced Matsubara frequency** `n`, with `nu = n pi / beta`.
+  Its parity follows the statistics: odd for fermions, even for bosons. In
+  terms of the ordinary index `m`, `n = 2m + zeta`, where the parity `zeta` is
+  1 for fermions and 0 for bosons. Validate parity at the boundary — see
+  [`ffi-boundary.md`](ffi-boundary.md).
 - **Augmentations are statistics-specific.** A constant-in-`tau` augmentation
   has a closed form that is valid for bosons; it is not valid for fermions. An
   augmentation applied to the wrong statistics must raise at construction,
@@ -95,15 +107,24 @@ the other, producing a rank-deficient or wrong basis with no error.
 
 ## Imaginary-Time Domain
 
-- `tau` arguments lie in `[0, beta]`. Values outside are an error, not
-  something to fold.
-- If a wrapper supports negative `tau` via the (anti)periodicity
-  `G(tau + beta) = -G(tau)` for fermions and `+G(tau)` for bosons, that
-  extension is opt-in, documented per function, and carries the correct sign
-  for the statistics. Never apply the fermionic sign to a bosonic object.
+- `tau` arguments lie in `[-beta, beta]`; values outside are an error, not
+  something to fold. Physics formulas and the default sampling points live in
+  `(0, beta)`.
+- Negative `tau` is folded with the sign of the statistics:
+  `f(tau) = (-1)^zeta f(tau + beta)`, i.e. `-` for fermions and `+` for
+  bosons. Never apply the fermionic sign to a bosonic object.
+- The endpoints are one-sided limits, and the sign of zero matters:
+
+  | Input | Read as |
+  |---|---|
+  | `+0.0` | `0+` |
+  | `beta` | `beta-` |
+  | `-0.0` | `0-`, i.e. `(-1)^zeta f(beta-)` |
+  | `-beta` | `(-beta)+`, i.e. `(-1)^zeta f(0+)` |
+
+  State this wherever `tau` is accepted, and keep the sign of zero through
+  every conversion: `np.mod` and `abs` drop it.
 - `beta > 0` and `wmax > 0` are validated at construction.
-- The endpoint convention (`tau = 0` versus `tau = beta`, and which side of a
-  discontinuity a value belongs to) must be stated where it is observable.
 
 ## Memory Order At The C Boundary
 
