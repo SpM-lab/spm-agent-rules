@@ -63,7 +63,17 @@ rules/
   rust.md
   julia.md
   python.md
+skills/
+  sparse-ir-release/         releasing the whole stack: order, gates, verification
+    SKILL.md
+    backend.md               sparse-ir-rs, crates.io, pylibsparseir
+    julia.md                 Yggdrasil, libsparseir_jll, SparseIR.jl
+    python.md                sparse-ir
 ```
+
+`rules/` states what must hold. `skills/` holds procedures that change
+together with the workflows they drive. Each skill directory has a `SKILL.md`
+with front matter, so agents that support skills can load it directly.
 
 ## Precedence
 
