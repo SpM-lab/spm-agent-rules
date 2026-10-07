@@ -21,6 +21,15 @@ load the topic and language files the task touches.
 - [`julia.md`](julia.md): `SparseIR.jl` and `ccall`.
 - [`python.md`](python.md): `sparse-ir` and `ctypes`.
 
+## Skills
+
+Skills are step-by-step procedures, kept under [`../skills/`](../skills/).
+Unlike rules, they name concrete workflows, files and commands.
+
+- [`sparse-ir-release`](../skills/sparse-ir-release/SKILL.md): releasing the
+  backend, `pylibsparseir`, `sparse-ir`, `libsparseir_jll` and `SparseIR.jl`
+  — order, gates, publish commands, final verification.
+
 ## Routing Table
 
 | Task | Load |
@@ -34,6 +43,7 @@ load the topic and language files the task touches.
 | Re-enabling or deleting a skipped test | `testing.md` |
 | Docs, README, docstrings, error messages | `common.md`, plus `numerical-conventions.md` if a physics claim is made |
 | Cross-repository audit or release readiness | all of `common.md`, `ffi-boundary.md`, `numerical-conventions.md`, `testing.md` |
+| Cutting a release, bumping a version, publishing to crates.io / PyPI / conda / General, or a Yggdrasil PR | the `sparse-ir-release` skill |
 
 ## Loading Policy
 

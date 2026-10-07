@@ -26,6 +26,18 @@
 - **Show a violation and its fix** when the distinction is subtle, as a
   miniature code snippet. Keep snippets to the few lines that carry the point.
 
+## What A Skill Must Do
+
+Files under `skills/` are procedures, not rules. The generic-and-durable
+requirement above does not apply to them: a skill may name workflows, files
+and commands in member repositories. In exchange:
+
+- Update the skill in the same change that renames a workflow, input, or file
+  it names. A stale procedure fails at the worst moment.
+- Every step that publishes or pushes says so, and every gate says how to
+  check it from the outside (an index API, a registry file).
+- Record measured facts (durations, pitfalls) as measured, with the year.
+
 ## Style
 
 - English, imperative mood, short paragraphs, bullet lists.
