@@ -25,6 +25,16 @@ what users' resolvers act on.
   - Changed signatures: either require the new backend alone, or keep the old
     range and branch on the backend at the `ctypes` call site. Every branch
     needs a test that runs on each supported backend.
+- To tell additions from changes, diff the header between the two backend
+  tags with comments stripped; a line starting with `<` is a removed or
+  changed declaration:
+
+  ```bash
+  H=sparse-ir-capi/include/sparseir/sparseir.h
+  strip() { git show "$1:$H" | grep -v '^ *\*\|^ */\*\*\|^ *\*/' | grep -v '^\s*$'; }
+  diff <(strip vOLD) <(strip vNEW) | grep '^<'   # empty: additions only
+  ```
+
 - Run the suite against the oldest and the newest backend in the range:
 
   ```bash
@@ -34,11 +44,12 @@ what users' resolvers act on.
 
 Merge after CI is green. CI installs from PyPI, so it cannot pass before 3a.
 
-## 4b. Version PR
+## 4b. Version Bump
 
-A separate, minimal PR that bumps `[project].version` in `pyproject.toml`. A
-patch bump fits when no public API changed. State in the PR body which
-backend range the release supports.
+Bump `[project].version` in `pyproject.toml`. A patch bump fits when no public
+API changed. State in the PR body which backend range the release supports.
+When 4a is only a range change, put the bump in the same PR as 4a (one PR per
+repository is the maintainer's preference; 2.1.6 was released this way).
 
 ## 4c. Tag
 

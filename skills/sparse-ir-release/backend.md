@@ -8,20 +8,32 @@ crates, the tag, and `pylibsparseir` on PyPI and conda.
 Use one branch (for example `release/vX.Y.Z`) and one PR, containing only the
 bump:
 
-- `Cargo.toml`: `[workspace.package].version` and the internal dependency
-  version on `sparse-ir`.
+- `Cargo.toml`: `[workspace.package].version` and the `version` of every
+  internal crate in `[workspace.dependencies]` (`sparse-ir`, `sparse-ir-core`,
+  `sparse-ir-dlr`, `sparse-ir-minipole`, `sparse-ir-basis`).
 - `python/pyproject.toml`: `[project].version`. It must equal the workspace
   version. Do not edit `python/pylibsparseir/__init__.py` (it reads package
   metadata) or `python/conda-recipe/meta.yaml` (it derives the version from
   `Cargo.toml`).
-- `sparse-ir/README.md`: the install snippets.
+- Install snippets. `check_version.py` checks all of them and fails on a
+  mismatch:
+  - `sparse-ir/README.md` (the crates.io page);
+  - the root `README.md` quick start;
+  - `docs/book/src/getting-started/installation.md` (the user guide).
+- Prose that names the release the docs are written against ("the 0.N
+  release"): the root `README.md`, `sparse-ir/README.md`, the four sub-crate
+  READMEs and `installation.md`. `check_version.py` does not see these, so
+  find them with `grep -rn "0\.N" --include=*.md`.
 - Lock files. Every one must be regenerated, or `--locked` CI jobs fail:
   - `Cargo.lock`: `cargo update -w`.
   - `python/uv.lock`: `(cd python && uv lock)`.
-  - `docs/tutorial-code/Cargo.lock`. Change only the `sparse-ir` entry.
-    `cargo update -p sparse-ir` there also upgrades unrelated crates, so edit
-    the one entry and then check with `cargo metadata --locked` (without
-    `--offline`).
+  - `docs/tutorial-code/Cargo.lock`: `cargo update -p sparse-ir` there. Check
+    with `git diff` that only the five workspace crates moved; if unrelated
+    crates were upgraded too, revert them and edit the entries by hand.
+
+Choosing the number: before 1.0, a minor bump (`0.N` → `0.N+1`) is the
+breaking slot for Cargo. Use it for any behaviour change of the public
+surface, including a changed default value, even when no signature changed.
 
 Gate:
 
@@ -44,8 +56,10 @@ gh workflow run manual-release.yml --repo SpM-lab/sparse-ir-rs \
   -f release_ref=main -f expected_version=X.Y.Z -f confirm_publish=true
 ```
 
-It publishes `sparse-ir`, waits until that exact version is visible on
-crates.io, then publishes `sparse-ir-capi`, pushes the annotated tag `vX.Y.Z`,
+It publishes the library crates `sparse-ir-core`, `sparse-ir-dlr`,
+`sparse-ir-minipole`, `sparse-ir-basis` and `sparse-ir` in that order, waits
+until `sparse-ir` at that exact version is visible on crates.io, then
+publishes `sparse-ir-capi`, pushes the annotated tag `vX.Y.Z`,
 and finally (job `publish-libsparseir`) pushes branch `libsparseir-vX.Y.Z` to
 the `SpM-lab/Yggdrasil` fork. It does **not** open the upstream Yggdrasil PR.
 
@@ -53,7 +67,9 @@ Check the result:
 
 ```bash
 git ls-remote --tags origin vX.Y.Z
-curl -sS -A release-check https://crates.io/api/v1/crates/sparse-ir-capi | jq -r .crate.max_version
+for c in sparse-ir-core sparse-ir-dlr sparse-ir-minipole sparse-ir-basis sparse-ir sparse-ir-capi; do
+  echo "$c $(curl -sS -A release-check https://crates.io/api/v1/crates/$c | jq -r .crate.max_version)"
+done
 ```
 
 If only the Yggdrasil job fails, the crates and the tag are already public and
@@ -70,6 +86,8 @@ Dispatch it against the tag:
 ```bash
 gh workflow run PublishPyPI.yml --repo SpM-lab/sparse-ir-rs --ref vX.Y.Z
 ```
+
+This step was missed for 0.11.0, which therefore never reached PyPI (2026).
 
 Gate for step 4: the version is on PyPI and has wheels for every supported
 CPython tag (currently cp310–cp314) on Linux x86_64 and macOS arm64:

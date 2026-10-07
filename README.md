@@ -75,6 +75,17 @@ skills/
 together with the workflows they drive. Each skill directory has a `SKILL.md`
 with front matter, so agents that support skills can load it directly.
 
+To make the skills available to a local agent (Claude Code, Codex, pi,
+OpenCode, ...), link each skill directory into the directory that agent
+scans for skills, for example:
+
+```bash
+for d in skills/*/; do ln -sfn "$PWD/$d" ~/.agents/skills/"$(basename "$d")"; done
+```
+
+Agents without skill support can follow the same files by hand: start at the
+skill's `SKILL.md`.
+
 ## Precedence
 
 - Repository-local rules override these shared rules when they are more
