@@ -88,7 +88,7 @@ personal token, so its `wheel.yml` and `conda.yml` do start on the tag.
 | --- | --- |
 | `manual-release.yml` | ~2 min |
 | `PublishPyPI.yml` (cp310–cp314, Linux + macOS) | ~4 min |
-| `publish_conda.yml` (20 packages) | ~40 min |
+| `publish_conda.yml` (20 packages) | ~40 min at 0.10.0; at 0.12.0 ~55 min on Linux and ~2.5 h on macOS, which builds the Rust crates once per variant (12–15 min each). A long macOS job is not a hang: check that `BUILD START` lines keep appearing before cancelling. |
 | Yggdrasil PR, open → merged and built | minutes to days (a maintainer merges it) |
 | General registry PR (JLL or package) | ~11 min |
 | Julia package server after the General merge | a further ~10 min |
