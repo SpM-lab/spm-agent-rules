@@ -13,12 +13,57 @@ because the bot app has no `workflows` permission. Sync first:
 gh repo sync SpM-lab/Yggdrasil --source JuliaPackaging/Yggdrasil --branch master
 ```
 
+## Known JLL Build Failures
+
+Both of these appeared while releasing 0.13.0 and are fixed in the recipe that
+`sparse-ir-rs` keeps (PRs #333, #334); they are worth recognising, because
+neither reports itself as a recipe problem.
+
+**`strided-kernel` dies with a rustc segmentation fault (exit 139).**
+
+```
+aarch64-linux-gnu-rustc-for-cargo: line 5: 1826 Segmentation fault  "$@"
+error: could not compile `strided-kernel` (lib)   (exit status: 139)
+```
+
+The job compiles for five to eight minutes and then dies in that SIMD-heavy
+dependency of `faer`/`tenferro`, because the workspace profile builds with a
+single codegen unit, the most memory-hungry way to compile it. The same commit
+passes on a retry and fails on a different platform, so it looks like
+infrastructure flakiness; it is the builder running out of memory. The recipe
+now sets `CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16` and `CARGO_BUILD_JOBS=2`.
+Five of the seven platforms failed this way in #15042 until that was fixed, and
+then all seven passed.
+
+**The JLL is built without the fused multiply-add.** The recipe sets `RUSTFLAGS`
+itself, and an explicit `RUSTFLAGS` *replaces* the flags in `.cargo/config.toml`
+rather than adding to them, so `-C target-feature=+fma` has to be repeated in
+the recipe. Without it the library builds and passes, just ~3x slower on the
+SVE, so nothing flags it. All JLL platforms have the instruction (mandatory on
+aarch64, present on x86-64 since 2013, available on powerpc64le).
+
+**The bot cannot push if it has to touch a workflow file.** Either grant
+`libsparseir-bot` the `workflows: write` repository permission (done, so this
+should not recur) or sync the fork as above; the push is refused with
+`refusing to allow a GitHub App to create or update workflow ... without
+'workflows' permission`.
+
+**The auto-merge bot may not open the PR.** For 0.13.0 the branch appeared but
+no PR did, and it had to be opened by hand (step 2). Expect the branch to need
+a manual PR after a hand-pushed branch.
+
+**Latency observed at 0.13.0:** PR opened 2026-10-08, merged 2026-10-11
+(3.6 days) even though all seven Buildkite platforms were green the same day it
+was opened; the General registration PR then auto-merged in 12 minutes and
+`libsparseir_jll` `0.13.0+0` was in `Versions.toml`. Nothing to do but wait.
+
 ## 3c. Yggdrasil PR
 
-1. Review the bot branch against upstream. Expect exactly three changed lines
-   in `L/libsparseir/build_tarballs.jl`: `version`, the
+1. Review the bot branch against upstream. A normal release changes exactly
+   three lines in `L/libsparseir/build_tarballs.jl`: `version`, the
    `# sparse-ir-rs vX.Y.Z` comment, and the `GitSource` hash (the tag object
-   hash, as in earlier releases).
+   hash, as in earlier releases). The `script` can also differ while the copy in
+   `sparse-ir-rs` is ahead of upstream - see the next section.
 
    ```bash
    R=https://raw.githubusercontent.com
