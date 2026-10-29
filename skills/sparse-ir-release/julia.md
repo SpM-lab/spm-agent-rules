@@ -60,16 +60,32 @@ was opened; the General registration PR then auto-merged in 12 minutes and
 ## 3c. Yggdrasil PR
 
 1. Review the bot branch against upstream. A normal release changes exactly
-   three lines in `L/libsparseir/build_tarballs.jl`: `version`, the
-   `# sparse-ir-rs vX.Y.Z` comment, and the `GitSource` hash (the tag object
-   hash, as in earlier releases). The `script` can also differ while the copy in
+   two lines in `L/libsparseir/build_tarballs.jl`: `version` and the
+   `GitSource` hash. The `script` can also differ while the copy in
    `sparse-ir-rs` is ahead of upstream - see the next section.
+
+   The source is pinned by commit and tag:
+
+   ```julia
+   GitSource(
+       "https://github.com/SpM-lab/sparse-ir-rs.git",
+       "<commit hash>";
+       tag = "v$(version)",
+   ),
+   ```
+
+   The hash must be the **commit** the tag points to, not the annotated tag
+   object. BinaryBuilder peels the tag and fails the build unless that commit
+   is `hash`. Yggdrasil reviewers ask for `tag=`
+   (JuliaPackaging/Yggdrasil#15362). `julia/update_build_tarballs.jl` writes
+   this form from SpM-lab/sparse-ir-rs#354 on; releases before 0.14.0 used the
+   tag object hash and a `# sparse-ir-rs vX.Y.Z` comment.
 
    ```bash
    R=https://raw.githubusercontent.com
    diff <(curl -fsS $R/JuliaPackaging/Yggdrasil/master/L/libsparseir/build_tarballs.jl) \
         <(curl -fsS $R/SpM-lab/Yggdrasil/libsparseir-vX.Y.Z/L/libsparseir/build_tarballs.jl)
-   git ls-remote https://github.com/SpM-lab/sparse-ir-rs refs/tags/vX.Y.Z   # the hash in GitSource
+   git ls-remote https://github.com/SpM-lab/sparse-ir-rs 'refs/tags/vX.Y.Z^{}'   # the commit: the hash in GitSource
    ```
 
 2. Open the PR upstream. This needs the maintainer's approval unless it has
